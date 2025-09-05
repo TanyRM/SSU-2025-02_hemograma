@@ -11,5 +11,4 @@ public class HemogramaApplication {
     public static void main(String[] args) {
         SpringApplication.run(HemogramaApplication.class, args);
     }
-
 }
