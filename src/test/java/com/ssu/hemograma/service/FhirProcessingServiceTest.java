@@ -35,7 +35,6 @@ class FhirProcessingServiceTest {
 
     @Test
     void deveProcessarPayloadFhirValidoSemLancarExcecao() {
-        // Este teste verifica se o método de parse consegue processar um JSON válido.
         // A prova de conceito é que nenhuma exceção é lançada.
         assertDoesNotThrow(() -> {
             fhirProcessingService.processFhirPayload(validFhirBundleJson);

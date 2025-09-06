@@ -17,7 +17,7 @@ class SubscriptionControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    // Conteúdo mínimo do JSON para o teste, apenas para garantir que o parseador não falhe.
+    // Conteúdo mínimo do JSON para o teste
     private final String sampleFhirBundle = """
     {
       "resourceType": "Bundle",
