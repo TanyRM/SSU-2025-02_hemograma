@@ -47,7 +47,7 @@ public class FhirProcessingService {
                     });
 
         } catch (Exception e) {
-            logger.error("Falha ao fazer o parse: {}", e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 }
