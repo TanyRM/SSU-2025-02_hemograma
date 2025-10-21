@@ -2,13 +2,14 @@ package com.ssu.hemograma;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-// ignorar banco de dados por enquanto, quando necessário retirar o exclude da anotação
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+@SpringBootApplication
+@EnableJpaRepositories(basePackages = "com.ssu.hemograma.repository")
 public class HemogramaApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(HemogramaApplication.class, args);
     }
+
 }
