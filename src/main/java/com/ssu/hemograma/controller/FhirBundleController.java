@@ -90,16 +90,4 @@ public class FhirBundleController {
 
         return ResponseEntity.ok(response);
     }
-
-    /**
-     * Endpoint de health check
-     */
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> healthCheck() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "FHIR Bundle Receptor - Monitora Anemia Infantil");
-        response.put("timestamp", LocalDateTime.now().toString());
-        return ResponseEntity.ok(response);
-    }
 }

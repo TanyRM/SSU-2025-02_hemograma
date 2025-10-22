@@ -46,21 +46,17 @@ public class HemogramaService {
                 return existente.get();
             }
 
-            // Construir entidade Hemograma
             Hemograma hemograma = new Hemograma();
             hemograma.setBundleId(bundleId);
             hemograma.setBundleJson(bundleJson);
 
-            // Processar observations do bundle
             processarObservations(bundle, hemograma);
 
-            // Salvar no banco
+            validarCamposObrigatorios(hemograma);
+
             Hemograma salvo = hemogramaRepository.save(hemograma);
 
-            log.info("Hemograma processado e salvo - ID: {}, Anemia: {}",
-                    salvo.getId(), salvo.getAlertaAnemia());
-
-            // Se possui alerta de anemia, notificar sistema de analise
+            // Se possui alerta de anemia, notifica sistema de analise
             if (salvo.getAlertaAnemia()) {
                 notificarSistemaAnalise(salvo);
             }
@@ -70,6 +66,19 @@ public class HemogramaService {
         } catch (Exception e) {
             log.error("Erro ao processar bundle FHIR", e);
             throw new RuntimeException("Erro ao processar bundle: " + e.getMessage(), e);
+        }
+    }
+
+    private void validarCamposObrigatorios(Hemograma hemograma) {
+        if (hemograma.getPacienteCpf() == null || hemograma.getPacienteCpf().isEmpty()) {
+            throw new IllegalStateException("CPF do paciente não encontrado no bundle");
+        }
+        if (hemograma.getLaboratorioCnes() == null || hemograma.getLaboratorioCnes().isEmpty()) {
+            throw new IllegalStateException("CNES do laboratório não encontrado no bundle");
+        }
+        if (hemograma.getDataColeta() == null) {
+            // Se não encontrou data de coleta, usa data atual
+            hemograma.setDataColeta(LocalDateTime.now());
         }
     }
 
@@ -84,14 +93,73 @@ public class HemogramaService {
     }
 
     private void processarObservations(Bundle bundle, Hemograma hemograma) {
+        String cpf = null;
+        String cnes = null;
+        LocalDateTime dataColeta = null;
+
         for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
             Resource resource = entry.getResource();
 
             if (resource instanceof Observation) {
                 Observation obs = (Observation) resource;
+
+                if (cpf == null && obs.hasSubject() && obs.getSubject().hasIdentifier()) {
+                    cpf = obs.getSubject().getIdentifier().getValue();
+                }
+
+                if (cnes == null && obs.hasPerformer() && !obs.getPerformer().isEmpty()) {
+                    Reference performer = obs.getPerformer().get(0);
+                    if (performer.hasIdentifier()) {
+                        cnes = performer.getIdentifier().getValue();
+                    }
+                }
+
+                if (dataColeta == null) {
+                    dataColeta = extrairDataColeta(obs);
+                }
+
                 processarObservation(obs, hemograma);
             }
         }
+
+        if (cpf != null) {
+            hemograma.setPacienteCpf(cpf);
+        }
+        if (cnes != null) {
+            hemograma.setLaboratorioCnes(cnes);
+        }
+        if (dataColeta != null) {
+            hemograma.setDataColeta(dataColeta);
+        }
+    }
+
+    private LocalDateTime extrairDataColeta(Observation obs) {
+        if (obs.hasEffectiveDateTimeType()) {
+            try {
+                Date data = obs.getEffectiveDateTimeType().getValue();
+                return LocalDateTime.ofInstant(data.toInstant(), ZoneId.systemDefault());
+            } catch (Exception e) {
+                log.warn("Erro ao converter effectiveDateTime: {}", e.getMessage());
+            }
+        }
+
+        if (obs.hasContained()) {
+            for (Resource contained : obs.getContained()) {
+                if (contained instanceof Specimen) {
+                    Specimen specimen = (Specimen) contained;
+                    if (specimen.hasCollection() && specimen.getCollection().hasCollectedDateTimeType()) {
+                        try {
+                            Date data = specimen.getCollection().getCollectedDateTimeType().getValue();
+                            return LocalDateTime.ofInstant(data.toInstant(), ZoneId.systemDefault());
+                        } catch (Exception e) {
+                            log.warn("Erro ao converter collectedDateTime: {}", e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private void processarObservation(Observation obs, Hemograma hemograma) {
@@ -115,26 +183,9 @@ public class HemogramaService {
             }
         }
 
-        // Extrair dados do paciente e laboratorio
-        if (obs.hasSubject() && obs.getSubject().hasIdentifier()) {
-            hemograma.setPacienteCpf(obs.getSubject().getIdentifier().getValue());
-        }
-
-        if (obs.hasPerformer() && !obs.getPerformer().isEmpty() &&
-                obs.getPerformer().get(0).hasIdentifier()) {
-            hemograma.setLaboratorioCnes(obs.getPerformer().get(0).getIdentifier().getValue());
-        }
-
-        // Extrair data de coleta
-        if (obs.hasEffectiveDateTimeType()) {
-            Date dataColeta = obs.getEffectiveDateTimeType().getValue();
-            hemograma.setDataColeta(LocalDateTime.ofInstant(
-                    dataColeta.toInstant(), ZoneId.systemDefault()));
-        }
-
-        // Mapear valores por codigo LOINC - FOCO EM ANEMIA
+        // Mapear valores por codigo LOINC
         switch (loincCode) {
-            case "718-7": // Hemoglobina - PRINCIPAL INDICADOR DE ANEMIA
+            case "718-7": // Hemoglobina - Principal indicador
                 hemograma.setHemoglobina(valor);
                 hemograma.setHemoglobinaMin(min);
                 hemograma.setHemoglobinaMax(max);
@@ -165,7 +216,6 @@ public class HemogramaService {
     }
 
     private void notificarSistemaAnalise(Hemograma hemograma) {
-
     }
 
     public List<Hemograma> listarTodos() {

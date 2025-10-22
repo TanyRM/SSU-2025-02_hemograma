@@ -4,20 +4,23 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "hemogramas")
+@Table(name = "hemogramas", indexes = {
+        @Index(name = "idx_data_coleta", columnList = "dataColeta"),
+        @Index(name = "idx_alerta_anemia", columnList = "alertaAnemia")
+})
 public class Hemograma {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 100)
     private String bundleId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 14)
     private String pacienteCpf;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private String laboratorioCnes;
 
     @Column(nullable = false)
@@ -40,10 +43,11 @@ public class Hemograma {
     private Boolean alertaAnemia;
 
     // Classificacao da anemia
+    @Column(length = 20)
     private String classificacaoAnemia; // LEVE, MODERADA, GRAVE
 
-    // Bundle FHIR completo (JSON)
-    @Column(columnDefinition = "TEXT")
+    // IMPORTANTE: Aumentar tamanho do campo para MEDIUMTEXT (16MB)
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String bundleJson;
 
     public Hemograma() {
