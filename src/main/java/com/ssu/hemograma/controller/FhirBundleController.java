@@ -1,6 +1,8 @@
 package com.ssu.hemograma.controller;
 
+import ca.uhn.fhir.context.FhirContext;
 import com.ssu.hemograma.model.Hemograma;
+import com.ssu.hemograma.service.AnaliseService;
 import com.ssu.hemograma.service.HemogramaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

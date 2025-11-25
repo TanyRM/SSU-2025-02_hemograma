@@ -52,8 +52,7 @@ public class MonitoramentoController {
     }
 
     @GetMapping("/status-surto")
-
-            public ResponseEntity<String> verificarStatusSurto() {
+    public ResponseEntity<String> verificarStatusSurto() {
         String status = analiseService.verificarSurto();
 
         // Se a resposta indicar surto, retornar status HTTP 429 (Too Many Requests - Alerta de Limite Atingido)
@@ -65,7 +64,6 @@ public class MonitoramentoController {
     }
 
     // --- Métodos de Extração ---
-
     private Hemograma extrairDadosHemograma(Bundle bundle, String bundleJson) throws Exception {
 
         // --- 1. Extração do Recurso Patient (CPF e Data de Nascimento) ---
@@ -121,6 +119,7 @@ public class MonitoramentoController {
 
         // Identificadores e Datas
         h.setBundleId(bundle.getId());
+        h.setBundleJson(bundleJson);
         h.setPacienteCpf(cpf);
         h.setDataColeta(dataColeta);
         h.setDataRecebimento(LocalDateTime.now());

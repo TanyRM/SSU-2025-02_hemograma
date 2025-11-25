@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -22,11 +23,11 @@ public class HemogramaDTO {
     private LocalDateTime dataRecebimento;
 
     // Valores dos exames
-    private Double hemoglobina;
-    private Double hematocrito;
-    private Double leucocitos;
-    private Double hemacias;
-    private Double plaquetas;
+    private BigDecimal hemoglobina;
+    private BigDecimal hematocrito;
+    private BigDecimal leucocitos;
+    private BigDecimal hemacias;
+    private BigDecimal plaquetas;
 
     // Alertas
     private Boolean alertaAnemia;
@@ -55,10 +56,10 @@ public class HemogramaDTO {
                 .build();
 
         // Classificar anemia se presente
-        if (hemograma.getAlertaAnemia() && hemograma.getHemoglobina() != null) {
-            dto.setClassificacaoAnemia(classificarAnemia(hemograma.getHemoglobina()));
-            dto.setNivelGravidade(determinarGravidade(hemograma.getHemoglobina()));
-        }
+//        if (hemograma.getAlertaAnemia() && hemograma.getHemoglobina() != null) {
+//            dto.setClassificacaoAnemia(classificarAnemia(hemograma.getHemoglobina()));
+//            dto.setNivelGravidade(determinarGravidade(hemograma.getHemoglobina()));
+//        }
 
         return dto;
     }
