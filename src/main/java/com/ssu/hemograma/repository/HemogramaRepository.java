@@ -21,15 +21,13 @@ public interface HemogramaRepository extends JpaRepository<Hemograma, Long> {
 
     List<Hemograma> findByPacienteCpf(String pacienteCpf);
 
-    List<Hemograma> findByAlertaAnemiaTrue();
-
     List<Hemograma> findByDataColetaBetween(LocalDateTime inicio, LocalDateTime fim);
 
     @Query("SELECT h FROM Hemograma h WHERE h.dataColeta >= :dataInicio AND " +
             "(h.alertaAnemia = true)")
     List<Hemograma> findHemogramasComAlertasAposData(@Param("dataInicio") LocalDateTime dataInicio);
 
-    @Query("SELECT COUNT(h) FROM Hemograma h WHERE h.dataColeta >= :dataInicio AND h.alertaAnemia = true")
+    @Query("SELECT COUNT(h) FROM Hemograma h WHERE h.dataColeta >= :dataInicio AND h.alertaSurtoAcionado = true")
     Long contarCasosAnemiaAposData(@Param("dataInicio") LocalDateTime dataInicio);
 
     @Query("SELECT h FROM Hemograma h WHERE h.dataColeta >= :dataInicio ORDER BY h.dataColeta DESC")

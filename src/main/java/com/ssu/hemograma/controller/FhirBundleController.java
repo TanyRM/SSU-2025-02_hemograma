@@ -1,8 +1,6 @@
 package com.ssu.hemograma.controller;
 
-import ca.uhn.fhir.context.FhirContext;
 import com.ssu.hemograma.model.Hemograma;
-import com.ssu.hemograma.service.AnaliseService;
 import com.ssu.hemograma.service.HemogramaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,20 +73,18 @@ public class FhirBundleController {
     }
 
     /**
-     * Endpoint para listar hemogramas com anemia
+     * Endpoint de notificação de surto de anemia.
      */
     @GetMapping("/hemogramas/anemia")
     public ResponseEntity<Map<String, Object>> listarHemogramasComAnemia(
             @RequestParam(required = false, defaultValue = "24") int ultimasHoras) {
 
         LocalDateTime dataInicio = LocalDateTime.now().minusHours(ultimasHoras);
-        List<Hemograma> hemogramasComAnemia = hemogramaService.listarComAnemia(dataInicio);
         Long casosAnemia = hemogramaService.contarCasosAnemia(dataInicio);
 
         Map<String, Object> response = new HashMap<>();
         response.put("periodo", ultimasHoras + " horas");
         response.put("totalCasosAnemia", casosAnemia);
-        response.put("hemogramas", hemogramasComAnemia);
 
         return ResponseEntity.ok(response);
     }

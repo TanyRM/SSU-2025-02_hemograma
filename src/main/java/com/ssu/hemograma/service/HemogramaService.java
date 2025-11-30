@@ -40,7 +40,6 @@ public class HemogramaService {
             IParser parser = fhirContext.newJsonParser();
             Bundle bundle = parser.parseResource(Bundle.class, bundleJson);
 
-            // Evita reprocessamento
             String bundleId = extrairBundleId(bundle);
             Optional<Hemograma> existente = hemogramaRepository.findByBundleId(bundleId);
             if (existente.isPresent()) {
@@ -49,12 +48,15 @@ public class HemogramaService {
             }
 
             Hemograma hemograma = extrairDadosHemograma(bundle, bundleJson);
-
             validarCamposObrigatorios(hemograma);
 
             Hemograma salvo = hemogramaRepository.save(hemograma);
-            log.info("✅ Hemograma salvo com sucesso. ID = {}", salvo.getId());
+            log.info("💾 Hemograma salvo parcialmente. ID = {}", salvo.getId());
 
+            boolean alertaColetivo = detectarAlertaSurto();
+            salvo.setAlertaAnemia(alertaColetivo);
+            salvo = hemogramaRepository.save(salvo);
+            log.info("✅ Hemograma salvo com sucesso com alerta coletivo = {}", alertaColetivo);
             return salvo;
 
         } catch (Exception e) {
@@ -119,6 +121,13 @@ public class HemogramaService {
         h.setHemoglobina(extractValue.apply(LOINC_HB));
         h.setHematocrito(extractValue.apply(LOINC_HT));
         h.setHemacias(extractValue.apply(LOINC_HE));
+
+        String classificacao = classificarHemograma(h);
+        h.setClassificacaoAnemia(classificacao);
+        boolean temAnemia = !classificacao.equals("normal") && !classificacao.equals("indefinido");
+
+        h.setAnemia(temAnemia);
+        h.setAlertaSurtoAcionado(temAnemia);
 
         // --- 4. Extração do Laboratório (Organization) ---
         Optional<Organization> organizationOpt = bundle.getEntry().stream()
@@ -241,36 +250,31 @@ public class HemogramaService {
         String loincCode = extrairLoincCode(obs);
         double valor = obs.getValueQuantity().getValue().doubleValue();
 
-        // Extrair valores de referencia
         Double min = null;
         Double max = null;
         if (obs.hasReferenceRange() && !obs.getReferenceRange().isEmpty()) {
             Observation.ObservationReferenceRangeComponent range = obs.getReferenceRange().get(0);
-            if (range.hasLow()) {
-                min = range.getLow().getValue().doubleValue();
-            }
-            if (range.hasHigh()) {
-                max = range.getHigh().getValue().doubleValue();
-            }
+            if (range.hasLow()) min = range.getLow().getValue().doubleValue();
+            if (range.hasHigh()) max = range.getHigh().getValue().doubleValue();
         }
 
-        // Mapear valores por codigo LOINC
         switch (loincCode) {
-            case "718-7": // Hemoglobina - Principal indicador
+            case "718-7": // Hemoglobina
                 hemograma.setHemoglobina(BigDecimal.valueOf(valor));
                 hemograma.setHemoglobinaMin(min);
                 hemograma.setHemoglobinaMax(max);
-                log.debug("Hemoglobina: {} g/dL (ref: {}-{})", valor, min, max);
                 break;
 
-            case "4544-3": // Hematocrito - Secundario
+            case "4544-3": // Hematócrito
                 hemograma.setHematocrito(BigDecimal.valueOf(valor));
-                log.debug("Hematocrito: {}%", valor);
                 break;
 
-            case "789-8": // Hemacias - Secundario
+            case "789-8": // Hemácias
                 hemograma.setHemacias(BigDecimal.valueOf(valor));
-                log.debug("Hemacias: {} x10^6/uL", valor);
+                break;
+
+            case "6690-2": // Leucócitos totais
+                hemograma.setLeucocitos(BigDecimal.valueOf(valor));
                 break;
         }
     }
@@ -286,7 +290,58 @@ public class HemogramaService {
         return "";
     }
 
-    private void notificarSistemaAnalise(Hemograma hemograma) {
+    public boolean detectarAlertaSurto() {
+        LocalDateTime inicio = LocalDateTime.now().minusHours(24);
+        long casos = this.contarCasosAnemia(inicio);
+        return casos >= 5;
+    }
+
+    public String classificarAnemia(BigDecimal hb, int idadeMeses) {
+        if (hb == null) return "indefinido";
+
+        double valor = hb.doubleValue();
+
+        // Crianças (6 meses a 5 anos)
+        if (idadeMeses >= 6 && idadeMeses < 60) {
+            if (valor < 7) return "grave";
+            if (valor < 10) return "moderada";
+            if (valor < 11) return "leve";
+            return "normal";
+        }
+
+        // Crianças (5 a 11 anos)
+        if (idadeMeses < 132) {
+            if (valor < 8) return "grave";
+            if (valor < 11) return "moderada";
+            if (valor < 11.5) return "leve";
+            return "normal";
+        }
+
+        // Adolescentes (12 a 14 anos)
+        if (idadeMeses < 180) {
+            if (valor < 8) return "grave";
+            if (valor < 11.5) return "moderada";
+            if (valor < 12) return "leve";
+            return "normal";
+        }
+
+        return "normal";
+    }
+
+    public String classificarHemograma(Hemograma h) {
+        String anemia = classificarAnemia(h.getHemoglobina(), h.getIdadeEmMeses());
+
+        BigDecimal leuc = h.getLeucocitos();
+        boolean leucAlterado = leuc != null && (leuc.doubleValue() < 4 || leuc.doubleValue() > 12);
+
+        if ("grave".equals(anemia) || leucAlterado) {
+            return "grave";
+        } else if ("moderada".equals(anemia)) {
+            return "moderada";
+        } else if ("leve".equals(anemia)) {
+            return "leve";
+        }
+        return "normal";
     }
 
     public List<Hemograma> listarTodos() {

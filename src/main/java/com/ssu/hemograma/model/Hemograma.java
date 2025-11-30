@@ -48,6 +48,9 @@ public class Hemograma {
     @Column(name = "hemacias", precision = 5, scale = 2)
     private BigDecimal hemacias;
 
+    @Column(name = "leucocitos", precision = 5, scale = 2)
+    private BigDecimal leucocitos;
+
     @Column(name = "idade_em_meses", nullable = false)
     private int idadeEmMeses;
 
@@ -73,45 +76,6 @@ public class Hemograma {
     public Hemograma() {
         this.alertaAnemia = false;
     }
-
-//    @PrePersist
-//    protected void onCreate() {
-//        dataRecebimento = LocalDateTime.now();
-//
-//        // Analise automatica de anemia
-//        alertaAnemia = verificarAnemia();
-//        if (alertaAnemia && hemoglobina != null) {
-//            classificacaoAnemia = classificarAnemia();
-//        }
-//    }
-
-    /**
-     * Verifica se ha anemia baseado na hemoglobina
-     * Criterio: hemoglobina < 11.0 g/dL para criancas 1-5 anos (OMS)
-     */
-//    private Boolean verificarAnemia() {
-//        if (hemoglobina == null) {
-//            return false;
-//        }
-//        // OMS: anemia em criancas 1-5 anos = Hb < 11.0 g/dL
-//        return hemoglobina < 11.0;
-//    }
-
-    /**
-     * Classifica o nivel da anemia para criancas de 1-5 anos
-     * Baseado em criterios da OMS
-     */
-//    private String classificarAnemia() {
-//        if (hemoglobina == null || hemoglobina >= 11.0) {
-//            return "SEM_ANEMIA";
-//        } else if (hemoglobina >= 10.0) {
-//            return "LEVE";
-//        } else if (hemoglobina >= 7.0) {
-//            return "MODERADA";
-//        } else {
-//            return "GRAVE";
-//        }
-//    }
 
     public Boolean possuiAlerta() {
         return alertaAnemia;
@@ -259,5 +223,13 @@ public class Hemograma {
 
     public void setBundleJson(String bundleJson) {
         this.bundleJson = bundleJson;
+    }
+
+    public BigDecimal getLeucocitos() {
+        return leucocitos;
+    }
+
+    public void setLeucocitos(BigDecimal leucocitos) {
+        this.leucocitos = leucocitos;
     }
 }
