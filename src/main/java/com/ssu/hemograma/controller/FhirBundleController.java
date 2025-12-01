@@ -8,9 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -61,31 +59,5 @@ public class FhirBundleController {
                     .status(HttpStatus.BAD_REQUEST)
                     .body(errorResponse);
         }
-    }
-
-    /**
-     * Endpoint para listar todos os hemogramas
-     */
-    @GetMapping("/hemogramas")
-    public ResponseEntity<List<Hemograma>> listarHemogramas() {
-        List<Hemograma> hemogramas = hemogramaService.listarTodos();
-        return ResponseEntity.ok(hemogramas);
-    }
-
-    /**
-     * Endpoint de notificação de surto de anemia.
-     */
-    @GetMapping("/hemogramas/anemia")
-    public ResponseEntity<Map<String, Object>> listarHemogramasComAnemia(
-            @RequestParam(required = false, defaultValue = "24") int ultimasHoras) {
-
-        LocalDateTime dataInicio = LocalDateTime.now().minusHours(ultimasHoras);
-        Long casosAnemia = hemogramaService.contarCasosAnemia(dataInicio);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("periodo", ultimasHoras + " horas");
-        response.put("totalCasosAnemia", casosAnemia);
-
-        return ResponseEntity.ok(response);
     }
 }

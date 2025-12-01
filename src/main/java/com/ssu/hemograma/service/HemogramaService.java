@@ -27,10 +27,12 @@ public class HemogramaService {
     private static final Logger log = LoggerFactory.getLogger(HemogramaService.class);
 
     private final HemogramaRepository hemogramaRepository;
+    private final AnaliseService analiseService;
     private final FhirContext fhirContext = FhirContext.forR4();
 
-    public HemogramaService(HemogramaRepository hemogramaRepository) {
+    public HemogramaService(HemogramaRepository hemogramaRepository, AnaliseService analiseService) {
         this.hemogramaRepository = hemogramaRepository;
+        this.analiseService = analiseService;
     }
 
     @Transactional
@@ -292,7 +294,7 @@ public class HemogramaService {
 
     public boolean detectarAlertaSurto() {
         LocalDateTime inicio = LocalDateTime.now().minusHours(24);
-        long casos = this.contarCasosAnemia(inicio);
+        long casos = this.analiseService.contarCasosAnemia(inicio);
         return casos >= 5;
     }
 
@@ -350,9 +352,5 @@ public class HemogramaService {
 
     public List<Hemograma> listarComAnemia(LocalDateTime apartirDe) {
         return hemogramaRepository.findHemogramasComAlertasAposData(apartirDe);
-    }
-
-    public Long contarCasosAnemia(LocalDateTime apartirDe) {
-        return hemogramaRepository.contarCasosAnemiaAposData(apartirDe);
     }
 }
