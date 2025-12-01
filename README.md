@@ -4,6 +4,12 @@
 
 Este projeto é um sistema de software para a área da saúde, focado no monitoramento de crianças de 0 a 5 anos na rede municipal de educação. O objetivo do sistema é receber resultados de exames de hemograma completo, analisar tendências de imunidade baixa e anemias, e notificar os gestores de saúde.
 
+## Frontend do Projeto
+
+[Repositório do Frontend](https://github.com/Vitorialuz229/SSU-2025-02_hemograma-mobile)
+
+O frontend do projeto foi desenvolvido com **React Native** utilizando o **Expo**, permitindo a execução em dispositivos Android e iOS de forma simples.
+
 ## Tecnologias Utilizadas
 
 * Java / Spring Boot
@@ -73,8 +79,6 @@ Este projeto é um sistema de software para a área da saúde, focado no monitor
 git clone https://github.com/RaquelDiasES/Gerador-de-Hemogramas.git
 cd Gerador-de-Hemogramas
 ```
-
-## Fluxo resumido
 
 - **Gerador de hemogramas** capta o hemograma vinda do gerador → envia bundle FHIR → `FhirBundleController` → processa e salva no DB.
 - **MonitoramentoController** → consulta dados do banco → fornece de notificação de ultimos casos para frontend.
