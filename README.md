@@ -64,7 +64,7 @@ Este projeto é um sistema de software para a área da saúde, focado no monitor
 
 ### Funcionamento do Projeto
 
-1. Integração com o Gerador de Hemogramas
+1. Integração com o Gerador de Hemogramas:
 
     O primeiro passo é clonar e executar o repositório responsável por gerar os Bundles FHIR contendo os dados de exames:
 
@@ -74,50 +74,16 @@ git clone https://github.com/RaquelDiasES/Gerador-de-Hemogramas.git
 cd Gerador-de-Hemogramas
 ```
 
-Esse gerador envia requisições POST para o endpoint do sistema de monitoramento, transmitindo dados de exames laboratoriais no formato FHIR (application/fhir+json).
+## Fluxo resumido
 
-2. Recepção e Armazenamento do Bundle FHIR
-   
-O backend expõe o endpoint:
-```bash
-POST /monitoramento/hemograma
-Content-Type: application/fhir+json
-```
+- **Gerador de hemogramas** capta o hemograma vinda do gerador → envia bundle FHIR → `FhirBundleController` → processa e salva no DB.
+- **MonitoramentoController** → consulta dados do banco → fornece de notificação de ultimos casos para frontend.
+- **DashboardController** → resume estatísticas e timeline → frontend consome e gera gráficos.
+- **Frontend (React Native/Expo)**:
+    - `DashboardScreen`: exibe gráficos e métricas.
+    - `RelatoriosScreen`: lista detalhada de hemogramas, filtros e relatórios.
+    - Alertas de surto mostrados em cards ou banners.
 
-Cada requisição contém um Bundle FHIR com os recursos:
+---
 
-* `Patient` → dados do paciente (CPF, data de nascimento, nome);
-* `Observation` → resultados laboratoriais (Hemoglobina, Hematócrito, Hemácias);
-* `Organization` → informações do laboratório (CNES/CNPJ).
-
-O JSON completo é armazenado no banco de dados no campo bundle_json, preservando a auditabilidade e rastreabilidade do dado original.
-
-3. Extração e Processamento dos Dados
-
-A classe `MonitoramentoController` utiliza a biblioteca HAPI-FHIR `(ca.uhn.fhir.context.FhirContext)` para:
-
-* Converter o JSON recebido em objetos Java (Bundle, Patient, Observation, etc.); 
-* Extrair informações relevantes (ex.: Hemoglobina, Hematócrito, Hemácias); 
-* Calcular a idade em meses do paciente a partir da data de nascimento; 
-* Registrar metadados como data de coleta, data de recebimento e identificador do laboratório.
-
-Esses dados são encapsulados em um objeto Hemograma, que é enviado para o serviço de análise.
-
-4. Análise Clínica e Classificação de Anemia
-
-A classe AnaliseService aplica as regras da Organização Mundial da Saúde (OMS) para classificar os níveis de hemoglobina conforme idade e sexo da criança, gerando:
-
-* `is_anemia` → indica se há anemia (booleano);
-* `classificacao_anemia` → indica o grau (Leve, Moderada, Grave).
-
-Os resultados são persistidos na tabela hemogramas, incluindo os valores extraídos e o JSON original.
-
-5. Detecção de Surtos e Monitoramento Populacional
-
-O endpoint:
-```bash
-GET /monitoramento/status-surto
-```
-realiza a contagem de hemogramas com anemia dentro de uma janela temporal configurada (ex.: últimas 24 horas).
-Se o número de casos ultrapassar um limite pré-definido, o sistema retorna um alerta de surto com código HTTP 429 (Too Many Requests), permitindo a integração com sistemas de vigilância epidemiológica.
 
